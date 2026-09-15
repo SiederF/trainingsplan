@@ -51,6 +51,7 @@
   --r-lg: 16px;
 
   --tap: 44px;                 /* Mindestgröße für Touch-Ziele */
+  --tabbar-h: 58px;            /* Höhe der festen Taskleiste auf dem Handy */
   --content-max: 720px;
   --shell-max: 1180px;
   --sidebar-w: 260px;

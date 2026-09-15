@@ -21,12 +21,20 @@ import { createTimerOverlay } from './ui/timerOverlay.js';
 import { renderSync } from './ui/syncView.js';
 
 /** Wird bei jeder Veröffentlichung hochgezählt, zusammen mit CACHE in sw.js. */
-export const APP_VERSION = '1.1.0';
+export const APP_VERSION = '1.2.0';
+
+/* Icons als SVG statt als Schriftzeichen: Zeichen wie ▤ oder ⚙ werden je
+   nach Gerät unterschiedlich oder gar nicht dargestellt. */
+const ICONS = {
+  plan: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/><path d="M7.5 13.5h4M7.5 17h7"/></svg>',
+  progress: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5V13M9.33 19.5V8M14.67 19.5v-6M20 19.5V4"/></svg>',
+  settings: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2.6"/><path d="M12 3.5v2M12 18.5v2M20.5 12h-2M5.5 12h-2M18 6l-1.4 1.4M7.4 16.6 6 18M18 18l-1.4-1.4M7.4 7.4 6 6"/></svg>'
+};
 
 const TABS = [
-  { id: 'plan',     label: 'Plan',       icon: '▤' },
-  { id: 'progress', label: 'Fortschritt', icon: '◔' },
-  { id: 'settings', label: 'Mehr',       icon: '⚙' }
+  { id: 'plan',     label: 'Plan' },
+  { id: 'progress', label: 'Fortschritt' },
+  { id: 'settings', label: 'Mehr' }
 ];
 
 const app = {
@@ -346,13 +354,14 @@ function buildNav() {
   TABS.forEach(t => {
     tabbar.appendChild(el('button.tab', {
       type: 'button', role: 'tab', 'data-tab': t.id, 'aria-selected': 'false',
+      'aria-label': t.label,
       onclick: () => { app.tab = t.id; render(); }
-    }, el('span.tab__icon', { text: t.icon }), t.label));
+    }, el('span.tab__icon', { html: ICONS[t.id] }), el('span', { text: t.label })));
 
     sidebar.appendChild(el('button.navitem', {
       type: 'button', role: 'tab', 'data-tab': t.id, 'aria-selected': 'false',
       onclick: () => { app.tab = t.id; render(); }
-    }, el('span.tab__icon', { text: t.icon }), t.label));
+    }, el('span.tab__icon', { html: ICONS[t.id] }), el('span', { text: t.label })));
   });
 }
 

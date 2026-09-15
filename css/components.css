@@ -5,31 +5,39 @@
 /* ---------- Kopfzeile ---------- */
 .topbar__row {
   display: flex; align-items: center; justify-content: space-between;
-  gap: var(--sp-3); padding: var(--sp-3) var(--sp-4);
+  gap: var(--sp-3); padding: var(--sp-2) var(--sp-4) var(--sp-1);
 }
-.topbar__title { font-size: var(--fs-md); font-weight: var(--fw-semi); }
-.topbar__sub   { font-size: var(--fs-xs); color: var(--c-text-dim); }
+.topbar__title { font-size: var(--fs-base); font-weight: var(--fw-semi); line-height: 1.3; }
+.topbar__sub   {
+  font-size: 11px; color: var(--c-text-dim); line-height: 1.35;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
 @media (min-width: 860px) { .topbar__row { padding-inline: 0; } }
 
 /* ---------- Navigation ---------- */
 .tab {
-  flex: 1; display: flex; flex-direction: column; align-items: center;
-  gap: 2px; padding: var(--sp-2) 0 var(--sp-3);
-  min-height: var(--tap);
-  font-size: var(--fs-xs); color: var(--c-text-dim);
+  flex: 1;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 3px;
+  height: var(--tabbar-h);
+  font-size: 11px; font-weight: var(--fw-medium); letter-spacing: .01em;
+  color: var(--c-text-dim);
   border-top: 2px solid transparent;
 }
-.tab[aria-selected="true"] { color: var(--c-text); border-top-color: var(--c-accent); }
-.tab__icon { font-size: 1.1rem; line-height: 1; }
+.tab[aria-selected="true"] { color: var(--c-accent); border-top-color: var(--c-accent); }
+.tab__icon { display: block; width: 22px; height: 22px; }
+.tab__icon svg { width: 100%; height: 100%; display: block; }
 
 .navitem {
   display: flex; align-items: center; gap: var(--sp-3);
+  min-height: var(--tap);
   padding: var(--sp-3) var(--sp-3);
   border-radius: var(--r-md);
   color: var(--c-text-muted); font-size: var(--fs-sm); font-weight: var(--fw-medium);
   text-align: left;
 }
 .navitem[aria-selected="true"] { background: var(--c-surface); color: var(--c-text); }
+.navitem .tab__icon { width: 20px; height: 20px; flex: 0 0 auto; }
 .navitem:hover { background: var(--c-surface); }
 .sidebar__brand { padding: 0 var(--sp-3) var(--sp-4); }
 .sidebar__brand strong { display: block; font-size: var(--fs-md); }
@@ -38,13 +46,15 @@
 /* ---------- Wochen- und Tageswahl ---------- */
 .chiprow {
   display: flex; gap: var(--sp-1); overflow-x: auto;
-  padding: 0 var(--sp-4) var(--sp-3); scrollbar-width: none;
+  padding: var(--sp-2) var(--sp-4); scrollbar-width: none;
+  -webkit-overflow-scrolling: touch; scroll-snap-type: x proximity;
 }
+.chiprow > * { scroll-snap-align: center; }
 .chiprow::-webkit-scrollbar { display: none; }
 @media (min-width: 860px) { .chiprow { padding-inline: 0; } }
 
 .chip {
-  flex: 0 0 auto; min-width: 40px; height: 40px; padding-inline: var(--sp-2);
+  flex: 0 0 auto; min-width: 38px; height: 38px; padding-inline: var(--sp-2);
   border: 1px solid var(--c-line); border-radius: var(--r-md);
   color: var(--c-text-muted); font-size: var(--fs-sm); font-weight: var(--fw-medium);
 }
@@ -61,11 +71,11 @@
 
 .daystrip { display: flex; border-top: 1px solid var(--c-line-soft); }
 .daystrip__day {
-  flex: 1; padding: var(--sp-2) 2px var(--sp-2);
-  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  flex: 1; min-width: 0; padding: var(--sp-2) 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
   border-bottom: 2px solid transparent;
   color: var(--c-text-dim); font-size: var(--fs-xs); font-weight: var(--fw-medium);
-  min-height: var(--tap);
+  min-height: 46px;
 }
 .daystrip__day[aria-pressed="true"] { color: var(--c-text); border-bottom-color: var(--c-accent); }
 .daystrip__dot { width: 5px; height: 5px; border-radius: 50%; background: var(--c-line); }
@@ -227,6 +237,7 @@
 @media (max-width: 380px) {
   .content { padding-inline: var(--sp-3); }
   .topbar__row, .chiprow { padding-inline: var(--sp-3); }
+  .tab { font-size: 10px; }
   .chip { min-width: 34px; height: 36px; font-size: var(--fs-xs); }
   .ratings { grid-template-columns: repeat(2, 1fr); }
   .stats { grid-template-columns: repeat(2, 1fr); }

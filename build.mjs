@@ -5,13 +5,15 @@
  * per Doppelklick. Die gebündelte Datei ist ein Ergebnis, keine Quelle —
  * gepflegt wird immer das Projekt, danach dieses Skript neu laufen lassen.
  *
- * Aufruf: node build.mjs
- * Ergebnis: dist/trainingsplan-standalone.html
+ * Wichtig: Das Gerüst wird aus index.html GELESEN, nicht hier nochmal
+ * hingeschrieben. Eine zweite Kopie würde bei jeder Strukturänderung
+ * auseinanderlaufen — genau das ist schon einmal passiert.
  *
- * Unterschiede zur installierten Version:
- *   – kein Service Worker, also kein Offline-Cache
+ * Aufruf: node build.mjs → dist/trainingsplan-standalone.html
+ *
+ * Unterschiede zur installierten Fassung:
+ *   – kein Service Worker, also kein Offline-Cache und keine Updatemeldung
  *   – keine Installation als App über das Manifest
- *   – Schriftart wird bei Bedarf aus dem Netz geladen, sonst Systemschrift
  * Die Trainingslogik ist identisch, weil derselbe Quellcode gebündelt wird.
  */
 
@@ -32,54 +34,31 @@ const bundle = await build({
   write: false,
   legalComments: 'none'
 });
-
 const js = bundle.outputFiles[0].text;
 
-const html = `<!DOCTYPE html>
-<html lang="de">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#1b2126">
-<title>Trainingsplan — Bouldern (Vorschau)</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&display=swap">
-<style>
-${css}
-</style>
-</head>
-<body>
+let html = await readFile('index.html', 'utf8');
 
-<div class="shell">
-  <aside class="sidebar" id="sidebar" role="tablist" aria-label="Bereiche">
-    <div class="sidebar__brand">
-      <strong>Trainingsplan</strong>
-      <span>14 Wochen · Bouldern</span>
-    </div>
-  </aside>
+// Verweise ersetzen, die es in der Einzeldatei nicht gibt
+html = html
+  .replace(/\n\s*<link rel="manifest"[^>]*>/g, '')
+  .replace(/\n\s*<link rel="icon"[^>]*>/g, '')
+  .replace(/\n\s*<link rel="apple-touch-icon"[^>]*>/g, '')
+  .replace(/\n\s*<link rel="stylesheet" href="\.\/css\/[^"]+">/g, '')
+  .replace(/<title>[^<]*<\/title>/, '<title>Trainingsplan — Bouldern (Vorschau)</title>')
+  .replace('</head>', `<style>\n${css}\n</style>\n</head>`)
+  .replace(/\n\s*<script type="module" src="\.\/js\/app\.js"><\/script>/,
+           `\n<script>\n${js}\n</script>`);
 
-  <header class="topbar">
-    <div class="topbar__row">
-      <div>
-        <div class="topbar__title" id="week-label">Woche 1</div>
-        <div class="topbar__sub" id="block-label"></div>
-      </div>
-    </div>
-    <div class="chiprow" id="weekchips" role="group" aria-label="Woche wählen"></div>
-    <div class="daystrip" id="daystrip" role="group" aria-label="Tag wählen"></div>
-  </header>
-
-  <main class="content" id="view" role="main"></main>
-  <nav class="tabbar" id="tabbar" role="tablist" aria-label="Bereiche"></nav>
-</div>
-
-<script>
-${js}
-</script>
-</body>
-</html>
-`;
+// Sicherstellen, dass nichts übrig blieb, das ins Leere zeigt
+const reste = [...html.matchAll(/(?:href|src)="\.\/(?!assets)[^"]+"/g)].map(m => m[0]);
+if (reste.length) {
+  console.error('Nicht ersetzte Verweise gefunden:', reste);
+  process.exit(1);
+}
+if (!html.includes('<style>') || !html.includes('(() => {')) {
+  console.error('CSS oder JavaScript wurde nicht eingebettet.');
+  process.exit(1);
+}
 
 await mkdir('dist', { recursive: true });
 await writeFile('dist/trainingsplan-standalone.html', html, 'utf8');

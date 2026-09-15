@@ -52,7 +52,7 @@ const B1 = {
         hold('density_jug', 2, 40, 90), hold('hollow', 3, 30, 60)],
     2: [ival('repeaters_20', 4, 7, 3, 6, 180, { load: 2.5 }), ival('repeaters_open', 3, 7, 3, 6, 180, { load: 0 }),
         hold('density_jug', 2, 40, 90), hold('hollow', 3, 30, 60)],
-    3: [ival('repeaters_20', 4, 7, 3, 6, 180, { load: 5 }), ival('repeaters_open', 3, 7, 3, 6, 180, { load: 2.5 }),
+    3: [ival('repeaters_20', 4, 7, 3, 6, 180, { load: 5 }), hold('maxhang_sloper', 3, 12, 150, { load: 0 }),
         hold('density_jug', 2, 45, 90), hold('hollow', 3, 30, 60)],
     4: [ival('repeaters_20', 3, 7, 3, 6, 180, { load: 2.5 }), ival('repeaters_open', 2, 7, 3, 6, 180, { load: 0 }),
         hold('density_jug', 2, 40, 90), hold('hollow', 3, 30, 60)]
@@ -94,11 +94,11 @@ const B2 = {
   board: {
     6: [hold('maxhang_20', 5, 10, 180, { load: 7.5 }), hold('maxhang_open', 3, 10, 180, { load: 5 }),
         reps('pallof', 3, 10, 45, { perSide: true })],
-    7: [hold('maxhang_20', 5, 10, 180, { load: 10 }), hold('maxhang_open', 3, 10, 180, { load: 5 }),
+    7: [hold('maxhang_20', 5, 10, 180, { load: 10 }), hold('maxhang_sloper', 3, 10, 180, { load: 0 }),
         reps('pallof', 3, 10, 45, { perSide: true })],
     8: [hold('maxhang_20', 5, 10, 180, { load: 12.5 }), hold('maxhang_open', 3, 10, 180, { load: 7.5 }),
         reps('pallof', 3, 10, 45, { perSide: true })],
-    9: [hold('maxhang_20', 5, 10, 180, { load: 15 }), hold('maxhang_open', 3, 10, 180, { load: 7.5 }),
+    9: [hold('maxhang_20', 5, 10, 180, { load: 15 }), hold('maxhang_sloper', 3, 10, 180, { load: 0 }),
         reps('pallof', 3, 10, 45, { perSide: true })]
   }
 };
@@ -116,7 +116,7 @@ const NOHANG = ival('nohang', 1, 10, 50, 10, 0);
 
 const TESTS = [
   hold('t_hang', 1, 10, 180), reps('t_pull', 1, 1, 180), reps('t_dip', 1, 1, 180),
-  reps('t_core', 1, 1, 120), reps('t_weight', 1, 1, 0)
+  reps('t_core', 1, 1, 120), reps('t_hip', 1, 1, 60), reps('t_weight', 1, 1, 0)
 ];
 
 const S = (id, kind, title, duration, items, opts = {}) =>
@@ -155,8 +155,10 @@ export function buildWeek(w) {
           ? 'Woche 1 dient der Eichung: bei Körpergewicht hängen und merken, wie fordernd der letzte Durchgang war.'
           : 'Wenn der sechste Durchgang nicht mehr sauber hält, ist die Last zu hoch.'
       }),
-      S('rock1', 'climb', 'Bouldern', 'Halle oder Fels', [free('boulder_tech')], { warmup: ['w_dyn'] }),
-      S('rock2', 'climb', 'Bouldern am Fels', 'Hauptsession', [free('boulder_rock')], { warmup: ['w_dyn'] }),
+      S('rock1', 'climb', 'Bouldern', 'Halle oder Fels', [free('explosive'), free('boulder_tech')], {
+        warmup: ['w_dyn'],
+        note: 'Die explosiven Züge kommen direkt nach dem Aufwärmen, im frischen Zustand. Im müden Zustand trainierst du Langsamkeit.' }),
+      S('rock2', 'climb', 'Bouldern am Fels', 'Hauptsession', [free('explosive'), free('boulder_rock')], { warmup: ['w_dyn'] }),
       S('mob1', 'mobility', 'Mobility', '15 min', MOBILITY),
       S('mob2', 'mobility', 'Ruhe und Mobility', '15 min', MOBILITY)
     );
@@ -173,8 +175,10 @@ export function buildWeek(w) {
         warmup: ['w_fingers'],
         note: 'Die Last stimmt, wenn nach zehn Sekunden noch zwei Sekunden Reserve wären. Sonst runtergehen, nicht durchbeißen.'
       }),
-      S('rock1', 'climb', 'Bouldern', 'Halle oder Fels', [free('boulder_tech')], { warmup: ['w_dyn'] }),
-      S('rock2', 'climb', 'Bouldern am Fels', 'Hauptsession', [free('boulder_rock')], { warmup: ['w_dyn'] }),
+      S('rock1', 'climb', 'Bouldern', 'Halle oder Fels', [free('explosive'), free('boulder_limit')], {
+        warmup: ['w_dyn'],
+        note: 'Drei mal drei dynamische Antritte nach dem Aufwärmen, dann ins Projektieren. Explosivkraft trennt Boulderer von Routenkletterern und darf nicht komplett wegfallen.' }),
+      S('rock2', 'climb', 'Bouldern am Fels', 'Hauptsession', [free('explosive'), free('boulder_rock')], { warmup: ['w_dyn'] }),
       S('mob1', 'mobility', 'Mobility', '15 min', MOBILITY),
       S('mob2', 'mobility', 'Ruhe und Mobility', '15 min', MOBILITY)
     );
@@ -189,7 +193,7 @@ export function buildWeek(w) {
         reps('archer_pushup', 3, 11, 75, { perSide: true }), reps('db_fly', 3, 17, 60),
         reps('tri_ext', 3, 13, 60), reps('band_facepull', 3, 20, 45)
       ], { warmup: ['w_dyn'],
-        note: 'Hypertrophie statt Maximalkraft: leichtere Last, mehr Wiederholungen, jeder Satz bis ein bis zwei Wiederholungen vor dem Versagen.' }),
+        note: 'Hypertrophie statt Maximalkraft: leichtere Last, mehr Wiederholungen, jeder Satz bis ein bis zwei Wiederholungen vor dem Versagen. Konzentrisch bewusst explosiv hochdrücken, exzentrisch langsam ablassen — die Bewegungsabsicht erhält die Schnellkraft, ohne dass eine Übung dazukommt.' }),
       S('pull', 'strength', 'Pull-Hypertrophie', '38 min', [
         reps('pullup_weighted', n, 7, 120, { load: 5 }), reps('row_db', 4, 13, 75, { perSide: true }),
         reps('band_row', 3, 15, 60), reps('band_pullover', 3, 15, 60),
@@ -197,13 +201,16 @@ export function buildWeek(w) {
       ], { warmup: ['w_dyn'],
         note: 'Weniger Last, mehr Wiederholungen als in Block 2 — für Masse zählt Zeit unter Spannung, nicht die Maximallast.' }),
       S('board', 'finger', 'Hangboard, Core und Arme', '35 min', [
-        hold('maxhang_hold', 3, 10, 180), reps('toes_to_bar', 4, 8, 60), hold('front_lever_adv', 4, 12, 60),
+        hold('maxhang_hold', 3, 10, 180),
+        hold(w === 12 ? 'maxhang_pocket' : 'onearm_assist', 3, 8, 150, { load: w === 12 ? 0 : -25 }),
+        reps('toes_to_bar', 4, 8, 60), hold('front_lever_adv', 4, 12, 60),
         reps('hammer_curl', 3, 13, 60), reps('wrist_curl', 3, 17, 45), reps('band_er', 3, 15, 45, { perSide: true })
       ], { warmup: ['w_fingers'],
         note: 'Am Hangboard nur das Niveau halten. Steigern wäre bei diesem Krafttrainingsvolumen zu viel für die Sehnen.' }),
-      S('rock1', 'climb', 'Bouldern', 'Halle oder Fels', [free('boulder_tech')], {
-        warmup: ['w_dyn'], note: 'In dieser Phase bewusst nicht am Anschlag klettern.' }),
-      S('rock2', 'climb', 'Bouldern am Fels', 'Hauptsession', [free('boulder_rock')], { warmup: ['w_dyn'] }),
+      S('rock1', 'climb', 'Bouldern', 'Halle oder Fels', [free('explosive'), free('boulder_tech')], {
+        warmup: ['w_dyn'],
+        note: 'In dieser Phase bewusst nicht am Anschlag klettern — die explosiven Züge bleiben trotzdem drin, damit die Schnellkraft im Aufbaublock nicht verloren geht.' }),
+      S('rock2', 'climb', 'Bouldern am Fels', 'Hauptsession', [free('explosive'), free('boulder_rock')], { warmup: ['w_dyn'] }),
       S('mob1', 'mobility', 'Mobility', '15 min', MOBILITY),
       S('mob2', 'mobility', 'Ruhe und Mobility', '15 min', MOBILITY, {
         note: 'Ohne 3100 bis 3400 kcal und 130 bis 155 g Protein täglich wächst in diesem Block nichts.' })

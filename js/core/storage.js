@@ -68,10 +68,15 @@ export const DEFAULTS = {
     boulderDays: [1, 5],      // Di und Sa
     currentWeek: 1,
     startedAt: null,
-    sound: true
+    sound: true,
+    koerpergewicht: 71,       // kg, Basis für das Kraft-Gewichts-Verhältnis
+    benachrichtigung: true
   },
-  levels: {},                 // exerciseId -> { level, lastDone }
-  log: [],                    // [{ at, week, sessionId, exerciseId, sets:[{target,done,rating}], delta }]
+  rehab: { aktiv: false, stufe: 1, schmerzfrei: 0, seit: null },
+  weights: [],                // [{ at, kg }]
+  boulders: [],               // [{ at, grad, ergebnis, versuche, ort, notiz }]
+  levels: {},                 // exerciseId -> { level, lastDone, streak, sperre }
+  log: [],                    // [{ at, week, sessionId, readiness, items }]
   completed: {}               // "week.sessionId" -> ISO-Datum
 };
 
@@ -84,6 +89,26 @@ export const saveLevels    = l => write('levels', l);
 export const loadLog       = () => read('log', DEFAULTS.log);
 export const loadCompleted = () => read('completed', DEFAULTS.completed);
 export const saveCompleted = c => write('completed', c);
+export const loadRehab     = () => read('rehab', DEFAULTS.rehab);
+export const saveRehab     = r => write('rehab', r);
+export const loadWeights   = () => read('weights', DEFAULTS.weights);
+export const loadBoulders  = () => read('boulders', DEFAULTS.boulders);
+
+export function addBoulder(eintrag) {
+  const list = loadBoulders();
+  list.push(eintrag);
+  write('boulders', list.slice(-1000));
+}
+
+export function removeBoulder(at) {
+  write('boulders', loadBoulders().filter(e => e.at !== at));
+}
+
+export function addWeight(kg) {
+  const list = loadWeights();
+  list.push({ at: new Date().toISOString(), kg: Number(kg) });
+  write('weights', list.slice(-200));
+}
 
 export function appendLog(entry) {
   const log = loadLog();
@@ -96,7 +121,8 @@ export function exportAll() {
     version: 1,
     exportedAt: new Date().toISOString(),
     settings: loadSettings(), levels: loadLevels(),
-    log: loadLog(), completed: loadCompleted()
+    log: loadLog(), completed: loadCompleted(),
+    rehab: loadRehab(), weights: loadWeights(), boulders: loadBoulders()
   };
 }
 
@@ -106,8 +132,11 @@ export function importAll(data) {
   if (data.levels)    write('levels', data.levels);
   if (data.log)       write('log', data.log);
   if (data.completed) write('completed', data.completed);
+  if (data.rehab)     write('rehab', data.rehab);
+  if (data.weights)   write('weights', data.weights);
+  if (data.boulders)  write('boulders', data.boulders);
 }
 
 export function resetAll() {
-  ['settings', 'levels', 'log', 'completed'].forEach(remove);
+  ['settings', 'levels', 'log', 'completed', 'rehab', 'weights', 'boulders'].forEach(remove);
 }

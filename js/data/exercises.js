@@ -139,7 +139,7 @@ export const EXERCISES = {
     link: yt('band external rotation rotator cuff')
   },
   wrist_curl: {
-    name: 'Handgelenk- und Reverse Curls', group: 'finger',
+    name: 'Handgelenk- und Reverse Curls', group: 'prehab',
     progress: { mode: 'reps', step: 2, min: 10, max: 30 },
     desc: 'Unterarm auf dem Oberschenkel, erst Handfläche nach oben, dann im Reverse-Griff. Die Reverse-Variante ist die wichtigere: Streckerseite, beste Vorbeugung gegen Tennisellbogen.',
     link: yt('wrist curl reverse curl forearm')
@@ -277,6 +277,30 @@ export const EXERCISES = {
     desc: 'Saubere Wiederholungen bis kurz vor Versagen. Ausgangswert: 3 × 8.', link: yt('dips max reps test') },
   t_core:   { name: 'Test — Toes-to-bar', group: 'core', progress: { mode: 'none' },
     desc: 'Gestreckte Beine bis zur Stange, ohne Schwung. Ausgangswert: 3 × 4.', link: yt('hanging leg raise test') },
+  maxhang_sloper: {
+    name: 'Max Hang — 35°-Sloper', group: 'finger',
+    progress: { mode: 'load', step: 2.5, min: -15, max: 15 },
+    desc: 'Offene Hand auf dem 35-Grad-Sloper des Beastmaker. Schultern aktiv, Handgelenk leicht gestreckt, Druck über die ganze Handfläche statt über die Fingerkuppen. Eigener Fortschrittswert, weil Sloperkraft sich nicht aus Leistenkraft ableiten lässt — und an Südtiroler Blöcken bist du ständig darauf angewiesen. Negative Werte heißen: mit Band entlasten.',
+    link: yt('sloper hangboard training technique')
+  },
+  maxhang_pocket: {
+    name: 'Max Hang — Zweifinger-Pocket', group: 'finger',
+    progress: { mode: 'load', step: 2.5, min: -15, max: 15 },
+    desc: 'Große Zweifinger-Pocket, Mittel- und Ringfinger, offene bis halboffene Position. Höhere Belastung pro Finger als an der Leiste, deshalb nur nach vollständigem Aufwärmen, nie im ermüdeten Zustand und niemals als Monos. Eigener Fortschrittswert.',
+    link: yt('two finger pocket hangboard training')
+  },
+  onearm_assist: {
+    name: 'Assistierter Einarmhang', group: 'finger',
+    progress: { mode: 'load', step: 2.5, min: -40, max: 0 },
+    desc: 'Einarmig an der 20-mm-Leiste, das Türband nimmt einen Teil des Körpergewichts ab. Die Last steigerst du, indem du die Bandunterstützung verringerst — deshalb bewegt sich der Wert von negativ Richtung null. Ab etwa V9-Niveau der übliche Weg, weil einarmige Belastung am Fels der Normalfall ist und beidarmiges Hängen die Asymmetrie verdeckt.',
+    link: yt('assisted one arm hang progression climbing')
+  },
+  t_hip: {
+    name: 'Test — Hüftbeweglichkeit (Foot Raise)', group: 'mobility',
+    progress: { mode: 'none' },
+    desc: 'Seitlich zur Wand stehen, wandnahes Bein ohne Ausweichbewegung des Oberkörpers so hoch wie möglich an die Wand setzen, Höhe vom Boden messen. Draper et al. fanden für diesen Test eine der stärksten Korrelationen mit der Kletterleistung überhaupt; Elite-Kletterer erreichen im Mittel rund 114 cm, Anfänger etwa 104 cm.',
+    link: yt('grant foot raise test climbing flexibility')
+  },
   t_weight: { name: 'Test — Körpergewicht', group: 'core', progress: { mode: 'none' },
     desc: 'Morgens nüchtern. Zielrate 0,2 kg pro Woche. Wenn du schneller zunimmst und die Hanglast in Prozent Körpergewicht fällt, Überschuss reduzieren.', link: 'https://trainingforclimbing.com' }
 };

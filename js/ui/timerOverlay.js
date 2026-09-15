@@ -6,6 +6,7 @@
 import { el, clear } from './dom.js';
 import { createTimer, formatTime } from '../core/timer.js';
 import * as sound from '../core/sound.js';
+import { melde, erlaubnisAnfragen } from '../core/notify.js';
 
 const CIRC = 2 * Math.PI * 45;
 
@@ -52,11 +53,20 @@ export function createTimerOverlay({ onOpen, onClose }) {
       rounds.textContent = rs > 1 ? `Durchgang ${round} von ${rs}` : '';
     },
     onPhase: ({ phase: ph }) => { ph === 'rest' ? sound.beepRest() : sound.beepWork(); },
-    onDone: () => { sound.beepDone(); close(); }
+    onDone: () => {
+      sound.beepDone();
+      // Im Hintergrund drosseln Browser die Tonausgabe. Dann übernimmt
+      // eine Systembenachrichtigung, damit die Pause nicht überzogen wird.
+      if (document.visibilityState !== 'visible') {
+        melde('Pause vorbei', label.textContent || 'Weiter geht es.');
+      }
+      close();
+    }
   });
 
   function open(config) {
     sound.unlock();
+    erlaubnisAnfragen();
     label.textContent = config.label || '';
     root.hidden = false;
     pauseBtn.textContent = 'Pause';

@@ -63,6 +63,23 @@ export const OVERSHOOT_STREAK = 2;
 /** Höchstens zwei zusätzliche Sätze über der Wiederholungsobergrenze. */
 export const MAX_EXTRA_SETS = 2;
 
+/**
+ * Steigerungssperre nach Fingerbeschwerden. Solange sie läuft, kann eine
+ * Übung nur gleich bleiben oder zurückgehen, nie steigen. Damit setzt ein
+ * einzelner guter Tag nach Schmerzen nicht sofort den Doppelsprung frei.
+ */
+export function mitSperre(ergebnis, sperre = 0) {
+  if (sperre <= 0) return { ...ergebnis, sperre: 0 };
+  return {
+    delta: Math.min(ergebnis.delta, 0),
+    streak: 0,
+    sperre: sperre - 1,
+    reason: ergebnis.delta > 0
+      ? 'Geschafft, aber nach Fingerbeschwerden bleibt die Steigerung noch gesperrt'
+      : ergebnis.reason
+  };
+}
+
 /** Abschlag auf das Level nach Trainingspause. */
 export function decayFor(days) {
   if (days == null) return 0;

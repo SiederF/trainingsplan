@@ -6,8 +6,11 @@
  * Kennt weder DOM noch Timer.
  */
 
-import { applyLevel, effectiveLevel, evaluate } from './progression.js';
-import { loadLevels, saveLevels, appendLog, loadCompleted, saveCompleted } from './storage.js';
+import { applyLevel, effectiveLevel, evaluate, mitSperre } from './progression.js';
+import { anpassen, istFinger, SPERRE_EINHEITEN } from './readiness.js';
+import { loadLevels, saveLevels, appendLog, loadCompleted, saveCompleted,
+         loadRehab, saveRehab } from './storage.js';
+import { begrenzen, nachEinheit } from './rehab.js';
 import { getExercise } from '../data/exercises.js';
 
 /** Zählbare Übungen — Bouldern und Freiformen werden nur abgehakt. */
@@ -20,19 +23,30 @@ export function zielwert(item) {
   return 1;
 }
 
-export function createWorkout(week, session) {
+export function createWorkout(week, session, readiness = { form: 'normal', finger: 'frei' }) {
   const levels = loadLevels();
   const now = Date.now();
 
-  // Vorgaben einmalig mit dem wirksamen Level verrechnen
-  const items = session.items.map(item => {
-    const lvl = effectiveLevel(levels[item.ex], now);
-    return applyLevel(item, lvl);
-  });
+  // Erst das gespeicherte Level verrechnen, dann die Tagesform. Die
+  // Reihenfolge ist wichtig: Tagesform verändert nur die heutige Vorgabe,
+  // nicht den Fortschritt.
+  const mitLevel = session.items.map(item => applyLevel(item, effectiveLevel(levels[item.ex], now)));
+
+  // Wiedereinstieg deckelt die Fingerlast, bevor die Tagesform greift.
+  const rehabZustand = loadRehab();
+  const gedeckelt = begrenzen(mitLevel, rehabZustand, istFinger);
+
+  const roh = anpassen(gedeckelt.items, readiness);
+  const items = roh.items;
+  const hinweise = [...gedeckelt.hinweise, ...roh.hinweise];
+  const entfernt = roh.entfernt;
 
   const state = {
     week: week.n,
     sessionId: session.id,
+    readiness,
+    hinweise,
+    entfernt,
     items,
     index: 0,
     results: items.map(() => []),
@@ -96,25 +110,57 @@ export function createWorkout(week, session) {
       const ex = getExercise(item.ex);
       if (!sets.length || !ex) return;
 
-      const entry = levelsNow[item.ex] || { level: 0, lastDone: null, streak: 0 };
+      const entry = levelsNow[item.ex] || { level: 0, lastDone: null, streak: 0, sperre: 0 };
       const wirksam = effectiveLevel(entry, Date.now());
 
-      let delta = 0, reason = 'Nur abgehakt', streak = 0;
+      let delta = 0, reason = 'Nur abgehakt', streak = 0, sperre = entry.sperre || 0;
       if (countable(item) && ex.progress?.mode !== 'none') {
-        const res = evaluate(sets, { type: item.type, exerciseId: item.ex, streak: entry.streak || 0 });
-        delta = res.delta; reason = res.reason; streak = res.streak;
+        if (item.keineSteigerung) {
+          reason = 'Wegen gemeldeter Beschwerden heute keine Steigerung';
+          sperre = Math.max(sperre, 1);
+        } else {
+          const roh = evaluate(sets, { type: item.type, exerciseId: item.ex, streak: entry.streak || 0 });
+          const res = mitSperre(roh, sperre);
+          delta = res.delta; reason = res.reason; streak = res.streak; sperre = res.sperre;
+        }
       }
 
-      levelsNow[item.ex] = { level: wirksam + delta, lastDone: stamp, streak };
+      levelsNow[item.ex] = { level: wirksam + delta, lastDone: stamp, streak, sperre };
       if (delta !== 0) anpassungen.push({ ex: item.ex, name: ex.name, delta, reason });
     });
+
+    // Bei gemeldetem Schmerz gehen ALLE Fingerübungen zurück, auch die, die
+    // heute gar nicht trainiert wurden — das Gewebe unterscheidet nicht
+    // zwischen Leiste und Sloper.
+    if (state.readiness?.finger === 'schmerz') {
+      Object.keys(levelsNow).forEach(id => {
+        if (!istFinger(id)) return;
+        const e = levelsNow[id];
+        levelsNow[id] = { ...e, level: (e.level || 0) - 1, streak: 0, sperre: SPERRE_EINHEITEN };
+      });
+      anpassungen.push({
+        ex: '*finger', name: 'Alle Fingerübungen', delta: -1,
+        reason: `Fingerschmerz gemeldet — eine Stufe zurück, Steigerung für ${SPERRE_EINHEITEN} Einheiten gesperrt`
+      });
+    }
 
     saveLevels(levelsNow);
 
     appendLog({
       at: stamp, week: state.week, sessionId: state.sessionId,
+      readiness: state.readiness,
       items: state.items.map((item, i) => ({ ex: item.ex, sets: state.results[i] }))
     });
+
+    // Wiedereinstiegsprotokoll fortschreiben, wenn Finger belastet wurden.
+    const rehabVorher = loadRehab();
+    if (rehabVorher.aktiv && state.items.some(i => istFinger(i.ex)) || (rehabVorher.aktiv && state.entfernt)) {
+      const schritt = nachEinheit(rehabVorher, state.readiness?.finger || 'frei');
+      saveRehab(schritt.zustand);
+      if (schritt.meldung) anpassungen.push({
+        ex: '*rehab', name: 'Wiedereinstieg', delta: schritt.fertig ? 1 : 0, reason: schritt.meldung
+      });
+    }
 
     const completed = loadCompleted();
     completed[state.week + '.' + state.sessionId] = stamp;

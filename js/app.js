@@ -19,9 +19,15 @@ import { renderRunner, renderSummary } from './ui/runnerView.js';
 import { renderProgress, renderSettings } from './ui/progressView.js';
 import { createTimerOverlay } from './ui/timerOverlay.js';
 import { renderSync } from './ui/syncView.js';
+import { renderReadiness } from './ui/readinessView.js';
+import { renderClimbForm, renderClimbStats } from './ui/climbLogView.js';
+import { neuerEintrag, bestenGrad, ZIELGRAD, gradIndex } from './core/climbing.js';
+import { hatFinger, beschwerdeMuster } from './core/readiness.js';
+import { aktuelleLast } from './core/metrics.js';
+import * as rehab from './core/rehab.js';
 
 /** Wird bei jeder Veröffentlichung hochgezählt, zusammen mit CACHE in sw.js. */
-export const APP_VERSION = '1.2.0';
+export const APP_VERSION = '1.5.0';
 
 /* Icons als SVG statt als Schriftzeichen: Zeichen wie ▤ oder ⚙ werden je
    nach Gerät unterschiedlich oder gar nicht dargestellt. */
@@ -43,6 +49,8 @@ const app = {
   settings: store.loadSettings(),
   workout: null,
   summary: null,
+  pending: null,        // Einheit wartet auf die Tagesform-Abfrage
+  climbForm: false,     // Eingabemaske für einen Boulder offen
   wakeText: '',
   syncStatus: null,
   updateReady: false
@@ -74,9 +82,17 @@ function updateSettings(next) {
 }
 
 /* ---------------- Trainingsmodus ---------------- */
+/** Erst fragen, dann starten. */
 function startWorkout(session) {
-  app.workout = createWorkout(week(), session);
+  app.pending = session;
   app.summary = null;
+  render();
+}
+
+function wirklichStarten(readiness) {
+  const session = app.pending;
+  app.pending = null;
+  app.workout = createWorkout(week(), session, readiness);
   sound.unlock();
   wake.acquire();
   render();
@@ -106,7 +122,7 @@ function render() {
 
   const chips = $('#weekchips');
   const strip = $('#daystrip');
-  const inWorkout = Boolean(app.workout || app.summary);
+  const inWorkout = Boolean(app.workout || app.summary || app.pending || app.climbForm);
   const showPlanNav = app.tab === 'plan' && !inWorkout;
 
   chips.hidden = !showPlanNav;
@@ -152,12 +168,42 @@ function render() {
     ));
   }
 
+  if (app.climbForm) {
+    renderClimbForm(root, {
+      vorgabeOrt: store.loadBoulders().slice(-1)[0]?.ort || '',
+      onSave: daten => {
+        try {
+          store.addBoulder(neuerEintrag(daten));
+          app.climbForm = false;
+          app.tab = 'progress';
+          render();
+        } catch (err) { alert(err.message); }
+      },
+      onAbbruch: () => { app.climbForm = false; render(); }
+    });
+    return;
+  }
+
+  if (app.pending) {
+    renderReadiness(root, {
+      session: app.pending,
+      fingerRelevant: hatFinger(app.pending),
+      muster: beschwerdeMuster(store.loadLog()),
+      onStart: wirklichStarten,
+      onAbbruch: () => { app.pending = null; render(); }
+    });
+    return;
+  }
+
   if (app.summary) {
     renderSummary(root, { anpassungen: app.summary, onBack: () => { app.summary = null; render(); } });
     return;
   }
 
   if (app.workout) {
+    (app.workout.state.hinweise || []).forEach(h =>
+      root.appendChild(el('div.note', { text: h, style: 'margin-bottom:12px' })));
+
     renderRunner(root, {
       workout: app.workout,
       wakeText: app.wakeText,
@@ -183,9 +229,20 @@ function render() {
       completed: store.loadCompleted(), onStart: startWorkout
     });
   } else if (app.tab === 'progress') {
+    const levels = store.loadLevels();
+    // Referenzvorgabe für den Max Hang: der Satz aus Woche 9, auf den sich
+    // die Prozentmarken beziehen.
+    const referenz = { ex: 'maxhang_20', type: 'hold', sets: 5, hold: 10, rest: 180, load: 15 };
     renderProgress(root, {
-      weeks: WEEKS, week: week(), levels: store.loadLevels(),
+      weeks: WEEKS, week: week(), levels,
       log: store.loadLog(), completed: store.loadCompleted(),
+      koerpergewicht: app.settings.koerpergewicht,
+      hangLast: aktuelleLast(referenz, levels),
+      rehab: store.loadRehab(),
+      gewichtsWarnung: gewichtsWarnung(),
+      boulders: store.loadBoulders(),
+      onNeuerBoulder: () => { app.climbForm = true; render(); },
+      onBoulderLoeschen: at => { store.removeBoulder(at); render(); },
       onRepeatWeek: () => render(),
       onNextWeek: () => updateSettings({
         ...app.settings, currentWeek: Math.min(app.settings.currentWeek + 1, WEEKS.length)
@@ -194,7 +251,15 @@ function render() {
   } else {
     renderSettings(root, {
       settings: app.settings,
+      rehab: store.loadRehab(),
       onChange: updateSettings,
+      onGewicht: setzeGewicht,
+      onRehabStart: () => { store.saveRehab(rehab.starten()); render(); },
+      onRehabEnde: () => {
+        if (confirm('Wiedereinstieg beenden? Die Fingerlast wird danach nicht mehr gedeckelt.')) {
+          store.saveRehab(rehab.beenden()); render();
+        }
+      },
       onExport: exportData,
       onImport: importData,
       onReset: resetData
@@ -330,6 +395,32 @@ function syncAbschalten() {
   meldung('Abgleich entfernt.');
 }
 
+/* ---------------- Körpergewicht ---------------- */
+function setzeGewicht(kg) {
+  if (!kg || kg < 30 || kg > 200) { alert('Bitte ein Gewicht zwischen 30 und 200 kg eintragen.'); return; }
+  store.addWeight(kg);
+  updateSettings({ ...app.settings, koerpergewicht: kg });
+}
+
+/**
+ * Warnt, wenn das Körpergewicht schneller steigt als die Hanglast. Genau
+ * dieser Fall macht dich am Fels schwächer, obwohl die Zahlen im
+ * Krafttraining besser aussehen.
+ */
+function gewichtsWarnung() {
+  const w = store.loadWeights();
+  if (w.length < 2) return null;
+  const erst = w[0], letzt = w[w.length - 1];
+  const zunahme = letzt.kg - erst.kg;
+  const wochen = Math.max(1, (new Date(letzt.at) - new Date(erst.at)) / (7 * 86400000));
+  const proWoche = zunahme / wochen;
+  if (proWoche > 0.35)
+    return `Dein Gewicht steigt um rund ${proWoche.toFixed(2).replace('.', ',')} kg pro Woche. Das ist mehr als die angepeilten 0,2 kg — bei dem Tempo ist ein größerer Teil davon Fett, und das Kraft-Gewichts-Verhältnis leidet. Kalorienüberschuss etwas zurücknehmen.`;
+  if (zunahme < -0.5 && wochen > 2)
+    return `Du hast seit Beginn ${Math.abs(zunahme).toFixed(1).replace('.', ',')} kg abgenommen, obwohl Aufbau das Ziel ist. Prüf, ob die Kalorien zum Radpendeln passen.`;
+  return null;
+}
+
 /* ---------------- Aktualisierung ---------------- */
 let swRegistration = null;
 let updateGemeldet = false;
@@ -371,6 +462,12 @@ function init() {
     store.saveSettings(app.settings);
   }
   sound.setEnabled(app.settings.sound);
+
+  // Dauerhaften Speicher anfordern. Ohne das räumt Safari Daten von Seiten
+  // weg, die sieben Tage nicht geöffnet wurden, und Android bei knappem
+  // Speicher. Bei installierten Apps wird es meist ohne Rückfrage gewährt.
+  if (navigator.storage?.persist) navigator.storage.persist().catch(() => {});
+
   document.body.appendChild(overlay.root);
   buildNav();
   render();

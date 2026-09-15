@@ -11,6 +11,12 @@ ohne Build-Schritt und ohne Konto. Alle Daten bleiben auf dem Gerät.
 - **Pausenerkennung** — nach längerer Inaktivität stuft die App die Vorgaben zurück.
 - **Bildschirm bleibt an** — während der gesamten Einheit, über die Wake-Lock-API.
 - **Fels-Tage frei wählbar** — der Rest der Woche ordnet sich automatisch darum an.
+- **Boulder-Protokoll** — Grad, Ergebnis, Versuche und Ort am Fels; daraus Gradverlauf, Abstand zum Zielgrad und Felszeit.
+- **Tagesform und Fingerzustand** — zwei Fragen vor jeder Einheit, die die Vorgaben anpassen.
+- **Schmerz-Flag** — bei Fingerbeschwerden fallen Fingerübungen aus, das Level geht zurück, die Steigerung bleibt gesperrt.
+- **Wiedereinstieg nach Verletzung** — vierstufiges Protokoll, das erst nach schmerzfreien Einheiten weitergeht.
+- **Kraft-Gewichts-Verhältnis** — Hanglast in Prozent Körpergewicht gegen die Gradmarken.
+- **Zug-Druck-Balance** — warnt, wenn das Antagonistentraining nicht mithält.
 - **Verschlüsselter Geräteabgleich** — optional über einen privaten GitHub-Gist, Ende zu Ende verschlüsselt.
 - **Offline** — nach dem ersten Laden vollständig ohne Netz nutzbar.
 - **Responsiv** — Handy mit Tab-Leiste unten, ab Tablet mit Seitenspalte.
@@ -64,6 +70,11 @@ js/
     crypto.js           AES-GCM und Schlüsselableitung
     sync.js             GitHub-Gist-Anbindung
     secrets.js          verschlüsselte Token-Ablage
+    readiness.js        Tagesform und Fingerzustand
+    rehab.js            Wiedereinstiegsprotokoll
+    metrics.js          Kraft-Gewichts-Verhältnis, Zug-Druck, Zyklusempfehlung
+    notify.js           Benachrichtigung bei Timerende im Hintergrund
+    climbing.js         Boulder-Protokoll, Gradskala und Statistik
     wakelock.js         Bildschirmsperre
     sound.js            Signaltöne
   ui/                   Darstellung, kennt keine Speicher-Details
@@ -73,6 +84,8 @@ js/
     timerOverlay.js     Vollbild-Timer
     progressView.js     Fortschritt und Einstellungen
     syncView.js         Einrichtung und Abgleich
+    readinessView.js    Abfrage vor dem Start
+    climbLogView.js     Boulder eintragen und auswerten
   app.js                Zusammenbau und Zustandsführung
 test.mjs                Logiktests, Aufruf: node test.mjs
 ```

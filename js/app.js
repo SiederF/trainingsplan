@@ -20,6 +20,9 @@ import { renderProgress, renderSettings } from './ui/progressView.js';
 import { createTimerOverlay } from './ui/timerOverlay.js';
 import { renderSync } from './ui/syncView.js';
 
+/** Wird bei jeder Veröffentlichung hochgezählt, zusammen mit CACHE in sw.js. */
+export const APP_VERSION = '1.1.0';
+
 const TABS = [
   { id: 'plan',     label: 'Plan',       icon: '▤' },
   { id: 'progress', label: 'Fortschritt', icon: '◔' },
@@ -33,7 +36,8 @@ const app = {
   workout: null,
   summary: null,
   wakeText: '',
-  syncStatus: null
+  syncStatus: null,
+  updateReady: false
 };
 
 const week = () => WEEKS[Math.min(app.settings.currentWeek, WEEKS.length) - 1];
@@ -123,6 +127,23 @@ function render() {
 
   const root = main();
 
+  if (app.updateReady) {
+    root.appendChild(el('div.note', { style: 'margin-bottom:16px' },
+      el('strong', { text: 'Neue Version bereit. ' }),
+      'Beim Neuladen wird sie übernommen.',
+      el('div.btnrow', {},
+        el('button.btn.btn--primary.btn--sm', {
+          type: 'button', text: 'Jetzt neu laden',
+          onclick: () => location.reload()
+        }),
+        el('button.btn.btn--sm.btn--ghost', {
+          type: 'button', text: 'Später',
+          onclick: () => { app.updateReady = false; render(); }
+        })
+      )
+    ));
+  }
+
   if (app.summary) {
     renderSummary(root, { anpassungen: app.summary, onBack: () => { app.summary = null; render(); } });
     return;
@@ -170,6 +191,14 @@ function render() {
       onImport: importData,
       onReset: resetData
     });
+    const vslot = document.getElementById('version-slot');
+    if (vslot) {
+      vslot.appendChild(el('p.ex__meta', { text: 'Version ' + APP_VERSION }));
+      vslot.appendChild(el('div.btnrow', {},
+        el('button.btn.btn--sm', { type: 'button', text: 'Nach Update suchen', onclick: nachUpdateSuchen })
+      ));
+    }
+
     const slot = document.getElementById('sync-slot');
     if (slot) renderSync(slot, {
       eingerichtet: secrets.istEingerichtet(),
@@ -293,6 +322,23 @@ function syncAbschalten() {
   meldung('Abgleich entfernt.');
 }
 
+/* ---------------- Aktualisierung ---------------- */
+let swRegistration = null;
+let updateGemeldet = false;
+
+/** Sucht von Hand nach einer neuen Fassung. */
+async function nachUpdateSuchen() {
+  if (!swRegistration) { meldung('Diese Fassung läuft ohne Service Worker.', true); return; }
+  try {
+    await swRegistration.update();
+    meldung(app.updateReady
+      ? 'Neue Version gefunden.'
+      : 'Kein Update gefunden — du hast die aktuelle Fassung.');
+  } catch {
+    meldung('Suche fehlgeschlagen. Bist du online?', true);
+  }
+}
+
 /* ---------------- Aufbau ---------------- */
 function buildNav() {
   const tabbar = $('#tabbar');
@@ -321,7 +367,21 @@ function init() {
   render();
 
   if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
+    window.addEventListener('load', async () => {
+      try {
+        swRegistration = await navigator.serviceWorker.register('./sw.js');
+
+        // Übernimmt ein neuer Service Worker, ist die neue Fassung im Cache.
+        // Bewusst kein automatisches Neuladen: Das würde mitten in einer
+        // Einheit die erfassten Sätze verwerfen.
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          if (updateGemeldet) return;
+          updateGemeldet = true;
+          app.updateReady = true;
+          render();
+        });
+      } catch { /* ohne Service Worker läuft die App trotzdem */ }
+    });
   }
 }
 

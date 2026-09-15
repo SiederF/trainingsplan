@@ -146,4 +146,5 @@ export function renderSettings(root, ctx) {
 
   root.appendChild(el('p.sectiontitle', { text: 'Über' }));
   root.appendChild(el('div.note', { text: 'Trainingsplan für den Weg von Font 7a Richtung 7c. 14 Wochen in vier Blöcken, ausgelegt auf Beastmaker 2000, Kurzhanteln bis 10 kg, Parallelbar, 20-kg-Weste und Türbänder.' }));
+  root.appendChild(el('div', { id: 'version-slot', style: 'margin-top:12px' }));
 }

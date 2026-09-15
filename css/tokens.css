@@ -1,0 +1,80 @@
+/* ==========================================================================
+   tokens.css — einzige Quelle für Farben, Typografie, Abstände, Radien.
+   Wer das Aussehen ändern will, ändert nur diese Datei.
+   ========================================================================== */
+
+:root {
+  /* Farbwelt: kühler Kalkstein mit Alpenglühen-Akzent */
+  --c-base:        #1b2126;
+  --c-surface:     #232c32;
+  --c-surface-2:   #2b363d;
+  --c-line:        #35434c;
+  --c-line-soft:   #2c383f;
+
+  --c-text:        #ecE8df;
+  --c-text-muted:  #97a6ae;
+  --c-text-dim:    #6d7d87;
+
+  --c-accent:      #e9a93c;   /* Aktion, aktiver Zustand */
+  --c-accent-ink:  #1b2126;
+  --c-cool:        #6fbfc9;   /* Sekundär, Information */
+  --c-rest:        #8aa37a;   /* Pausen */
+  --c-warn:        #d98b6a;   /* Hinweise, Rückstufung */
+
+  /* Typografie */
+  --font: 'Archivo', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --fs-xs:   0.75rem;
+  --fs-sm:   0.875rem;
+  --fs-base: 1rem;
+  --fs-md:   1.0625rem;
+  --fs-lg:   1.375rem;
+  --fs-xl:   1.75rem;
+  --fs-huge: clamp(3.5rem, 18vw, 5.5rem);
+
+  --fw-regular: 400;
+  --fw-medium:  500;
+  --fw-semi:    600;
+  --fw-bold:    700;
+
+  /* Abstände */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+  --sp-7: 48px;
+
+  /* Form */
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 16px;
+
+  --tap: 44px;                 /* Mindestgröße für Touch-Ziele */
+  --content-max: 720px;
+  --shell-max: 1180px;
+  --sidebar-w: 260px;
+
+  --shadow: 0 6px 24px rgba(0, 0, 0, .35);
+  --ring: 0 0 0 2px var(--c-cool);
+}
+
+/* Hellmodus: nur Tokens werden überschrieben, keine Regel doppelt. */
+@media (prefers-color-scheme: light) {
+  :root {
+    --c-base:       #f6f4ef;
+    --c-surface:    #ffffff;
+    --c-surface-2:  #eeeae2;
+    --c-line:       #d9d3c8;
+    --c-line-soft:  #e6e1d8;
+    --c-text:       #22292e;
+    --c-text-muted: #5d6a73;
+    --c-text-dim:   #86939c;
+    --c-accent:     #b9761a;
+    --c-accent-ink: #ffffff;
+    --c-cool:       #2b7f8c;
+    --c-rest:       #4f7343;
+    --c-warn:       #a9522c;
+    --shadow: 0 6px 24px rgba(30, 40, 50, .12);
+  }
+}

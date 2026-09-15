@@ -4,7 +4,12 @@
 
 *, *::before, *::after { box-sizing: border-box; }
 
-html { -webkit-text-size-adjust: 100%; }
+html {
+  -webkit-text-size-adjust: 100%;
+  /* clip statt hidden: verhindert seitliches Scrollen, ohne position:sticky
+     zu zerstoeren — overflow:hidden wuerde die Kopfzeile mitnehmen. */
+  overflow-x: clip;
+}
 
 body {
   margin: 0;
@@ -16,6 +21,9 @@ body {
   font-variant-numeric: tabular-nums;
   -webkit-font-smoothing: antialiased;
   overscroll-behavior-y: none;
+  overflow-x: clip;
+  /* Lange Woerter und Adressen sprengen sonst schmale Bildschirme. */
+  overflow-wrap: break-word;
 }
 
 h1, h2, h3, p, ul, ol { margin: 0; }

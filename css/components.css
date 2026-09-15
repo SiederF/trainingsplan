@@ -104,6 +104,8 @@
   border: 1px solid var(--c-line); border-radius: var(--r-md);
   background: var(--c-surface); color: var(--c-text);
   font-size: var(--fs-sm); font-weight: var(--fw-medium);
+  max-width: 100%; text-align: center; line-height: 1.2;
+  padding-block: var(--sp-2); height: auto;
 }
 .btn:hover { border-color: var(--c-text-dim); }
 .btn--primary {
@@ -122,7 +124,7 @@
 .exlist { display: flex; flex-direction: column; }
 
 .ex {
-  display: grid; grid-template-columns: 28px 1fr; gap: var(--sp-3);
+  display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: var(--sp-3);
   padding: var(--sp-4) 0;
   border-bottom: 1px solid var(--c-line-soft);
 }
@@ -163,9 +165,10 @@
 
 .field { display: flex; flex-direction: column; gap: var(--sp-2); }
 .field__label { font-size: var(--fs-xs); color: var(--c-text-dim); }
-.stepper { display: flex; align-items: center; gap: var(--sp-3); }
+.stepper { display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap; }
 .stepper__val { min-width: 3ch; text-align: center; font-size: var(--fs-lg); font-weight: var(--fw-semi); }
 .stepper__btn {
+  flex: 0 0 auto;
   width: var(--tap); height: var(--tap); border: 1px solid var(--c-line);
   border-radius: var(--r-md); font-size: var(--fs-lg);
 }
@@ -212,9 +215,30 @@
 .bar { flex: 1; background: var(--c-surface-2); border-radius: 2px 2px 0 0; min-height: 3px; }
 .bar--on { background: var(--c-accent); }
 
-.table { width: 100%; border-collapse: collapse; font-size: var(--fs-sm); }
+.table { width: 100%; border-collapse: collapse; font-size: var(--fs-sm); table-layout: fixed; }
 .table th, .table td { padding: var(--sp-3) var(--sp-2); text-align: left; border-bottom: 1px solid var(--c-line-soft); }
 .table th { color: var(--c-text-dim); font-size: var(--fs-xs); font-weight: var(--fw-medium); }
 .table td:last-child, .table th:last-child { text-align: right; }
 
 .tab[disabled], .navitem[disabled] { opacity: .35; cursor: not-allowed; }
+
+
+/* ---------- Sehr schmale Geräte (bis 380 px) ---------- */
+@media (max-width: 380px) {
+  .content { padding-inline: var(--sp-3); }
+  .topbar__row, .chiprow { padding-inline: var(--sp-3); }
+  .chip { min-width: 34px; height: 36px; font-size: var(--fs-xs); }
+  .ratings { grid-template-columns: repeat(2, 1fr); }
+  .stats { grid-template-columns: repeat(2, 1fr); }
+  .pagehead h2 { font-size: var(--fs-lg); }
+  .runner__name { font-size: var(--fs-lg); }
+  .setdot { width: 30px; height: 30px; }
+  .daystrip__day { font-size: 11px; }
+}
+
+/* ---------- Querformat mit wenig Höhe ---------- */
+@media (max-height: 520px) and (orientation: landscape) {
+  .dial { width: min(38vh, 180px); }
+  .dial__digits { font-size: 2.6rem; }
+  .overlay { gap: var(--sp-2); padding: var(--sp-3); }
+}

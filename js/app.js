@@ -48,6 +48,9 @@ const overlay = createTimerOverlay({
 wake.onChange(state => {
   app.wakeText = wake.STATE_TEXT[state] || '';
   overlay.setWakeText(app.wakeText);
+  // Auch die Trainingsansicht zeigt den Zustand an — ohne dieses Neuzeichnen
+  // bliebe dort der alte Text stehen, weil der Wechsel asynchron eintrifft.
+  if (app.workout) render();
 });
 
 /* ---------------- Speichern ---------------- */

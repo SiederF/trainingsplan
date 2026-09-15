@@ -149,7 +149,12 @@ export function renderRunner(root, ctx) {
     el('button.btn.btn--sm.btn--ghost', { type: 'button', text: 'Training abbrechen', onclick: onAbort })
   ));
 
-  if (wakeText) root.appendChild(el('p.overlay__wake', { text: wakeText, style: 'margin-top:16px' }));
+  if (wakeText) {
+    const aktiv = wakeText.startsWith('Bildschirm bleibt');
+    root.appendChild(el('div', {
+      class: 'note' + (aktiv ? '' : ' note--warn'), style: 'margin-top:16px'
+    }, el('strong', { text: aktiv ? '🔆 ' : '⚠ ' }), wakeText));
+  }
 }
 
 /** Rückmeldung nach dem Abschluss: was wurde angepasst. */

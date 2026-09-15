@@ -11,6 +11,7 @@ ohne Build-Schritt und ohne Konto. Alle Daten bleiben auf dem Gerät.
 - **Pausenerkennung** — nach längerer Inaktivität stuft die App die Vorgaben zurück.
 - **Bildschirm bleibt an** — während der gesamten Einheit, über die Wake-Lock-API.
 - **Fels-Tage frei wählbar** — der Rest der Woche ordnet sich automatisch darum an.
+- **Verschlüsselter Geräteabgleich** — optional über einen privaten GitHub-Gist, Ende zu Ende verschlüsselt.
 - **Offline** — nach dem ersten Laden vollständig ohne Netz nutzbar.
 - **Responsiv** — Handy mit Tab-Leiste unten, ab Tablet mit Seitenspalte.
 
@@ -60,6 +61,9 @@ js/
     schedule.js         Wochenverteilung um die Fels-Tage
     workout.js          Ablauf einer Einheit, Satzzählung
     timer.js            Countdown und Intervall
+    crypto.js           AES-GCM und Schlüsselableitung
+    sync.js             GitHub-Gist-Anbindung
+    secrets.js          verschlüsselte Token-Ablage
     wakelock.js         Bildschirmsperre
     sound.js            Signaltöne
   ui/                   Darstellung, kennt keine Speicher-Details
@@ -68,6 +72,7 @@ js/
     runnerView.js       Trainingsmodus
     timerOverlay.js     Vollbild-Timer
     progressView.js     Fortschritt und Einstellungen
+    syncView.js         Einrichtung und Abgleich
   app.js                Zusammenbau und Zustandsführung
 test.mjs                Logiktests, Aufruf: node test.mjs
 ```
@@ -79,6 +84,7 @@ Die Trennung ist die eigentliche Wartbarkeitszusage:
 - **Trainingsinhalt ändern** → nur `data/plan.js`
 - **Anpassungsregeln ändern** → nur `core/progression.js`
 - **Speicher wechseln (z. B. IndexedDB)** → nur `core/storage.js`
+- **Anderen Sync-Dienst anbinden** → nur `core/sync.js`
 
 Kein Modul greift auf den Speicher zu, außer über `storage.js`. Kein `core/`-Modul
 fasst das DOM an. Deshalb laufen die Logiktests ohne Browser.
@@ -153,11 +159,25 @@ Dort entscheidet der Fels, nicht die App.
 ## Tests
 
 ```bash
-node test.mjs
+npm test
 ```
 
 Prüft Plandaten, Muskelabdeckung je Woche, die Wochenverteilung über alle
-sinnvollen Fels-Tage-Kombinationen sowie die Progressions- und Anpassungslogik.
+sinnvollen Fels-Tage-Kombinationen sowie die Progressions- und Anpassungslogik. Eine zweite Reihe prüft die
+Verschlüsselung: Rundlauf, falsche Passphrase, erkannte Manipulation,
+Ableitung auf einem zweiten Gerät und große Datenmengen.
+
+## Verschlüsselung
+
+Der Geräteabgleich ist Ende zu Ende verschlüsselt: AES-GCM mit 256 Bit, der
+Schlüssel wird per PBKDF2-SHA256 mit 600.000 Runden aus der Passphrase
+abgeleitet (OWASP-Empfehlung für dieses Verfahren). Der Schlüssel wird nie
+gespeichert, sondern pro Sitzung neu abgeleitet und nur im Arbeitsspeicher
+gehalten.
+
+Das GitHub-Token liegt ebenfalls verschlüsselt auf dem Gerät, unter derselben
+Passphrase. Ohne sie ist auch das Token unlesbar. Einzelheiten zur Einrichtung
+stehen in `EINRICHTUNG.md`.
 
 ## Daten
 

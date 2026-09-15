@@ -7,7 +7,7 @@
  * activate-Schritt die alten Caches auf.
  */
 
-const CACHE = 'trainingsplan-v1';
+const CACHE = 'trainingsplan-v2';
 
 const ASSETS = [
   './', './index.html', './manifest.webmanifest',
@@ -15,9 +15,9 @@ const ASSETS = [
   './js/app.js',
   './js/data/exercises.js', './js/data/plan.js',
   './js/core/storage.js', './js/core/progression.js', './js/core/schedule.js',
-  './js/core/timer.js', './js/core/wakelock.js', './js/core/sound.js', './js/core/workout.js',
+  './js/core/timer.js', './js/core/crypto.js', './js/core/sync.js', './js/core/secrets.js', './js/core/wakelock.js', './js/core/sound.js', './js/core/workout.js',
   './js/ui/dom.js', './js/ui/planView.js', './js/ui/runnerView.js',
-  './js/ui/timerOverlay.js', './js/ui/progressView.js',
+  './js/ui/timerOverlay.js', './js/ui/syncView.js', './js/ui/progressView.js',
   './assets/icon-192.png', './assets/apple-touch-icon-180.png', './assets/icon-512.png', './assets/icon-maskable-512.png'
 ];
 

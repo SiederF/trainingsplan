@@ -101,44 +101,96 @@ Ja. Im Paket liegen vier Varianten:
 Das Motiv ist eine stilisierte Griffleiste mit drei Fingerpositionen.
 Willst du ein eigenes, ersetze die vier PNGs unter gleichem Namen.
 
-## 5. Synchronisierung zwischen Geräten — hier muss ich dich bremsen
+## 5. Geräteabgleich — verschlüsselt über einen privaten Gist
 
-**Nein, das funktioniert so nicht.** GitHub Pages ist reiner Dateiversand:
-Es liefert deine HTML-, CSS- und JS-Dateien aus und kann nichts
-zurückschreiben. Es gibt dort keine Datenbank und kein Benutzerkonto.
+**Wichtig vorweg:** GitHub Pages selbst kann nichts speichern. Es liefert nur
+Dateien aus. Der Abgleich läuft deshalb über die GitHub-API und einen privaten
+**Gist** — das ist ein zweiter, davon unabhängiger Dienst im selben Konto.
 
-Deine Trainingsdaten liegen in `localStorage` — das ist **pro Gerät und pro
-Browser**. Handy und Laptop haben also getrennte Stände, und auch Safari und
-Chrome auf demselben Handy wüssten nichts voneinander.
+### Wie es funktioniert
 
-### Was jetzt schon geht
+Dein gesamter Datenstand wird **auf dem Gerät** verschlüsselt und als ein
+unlesbarer Block in einen privaten Gist gelegt. GitHub bekommt nie Klartext zu
+sehen. Auf dem zweiten Gerät gibst du dieselbe Passphrase und dieselbe Gist-ID
+ein, und der Stand ist da.
 
-Unter **Mehr → Daten**: *Sicherung speichern* erzeugt eine JSON-Datei,
-*Sicherung laden* spielt sie auf einem anderen Gerät ein. Legst du die Datei in
-iCloud, Google Drive oder Dropbox ab, ist der Wechsel eine Sache von zwei Tipps —
-aber eben von Hand, und der jeweils letzte Import gewinnt.
+| | |
+|---|---|
+| Verschlüsselung | AES-GCM, 256 Bit |
+| Schlüsselableitung | PBKDF2-SHA256, 600.000 Runden |
+| Schlüssel gespeichert? | Nein — wird pro Sitzung aus der Passphrase neu abgeleitet |
+| Token gespeichert? | Ja, aber **selbst verschlüsselt** unter derselben Passphrase |
 
-Für den üblichen Fall reicht das: Wer auf einem Gerät trainiert und die Daten
-nur gelegentlich mitnehmen will, kommt damit gut zurecht.
+Der letzte Punkt ist der entscheidende. Ohne Passphrase findet auch jemand mit
+deinem entsperrten Handy nur einen unlesbaren Block — weder Trainingsdaten noch
+das Token.
 
-### Was es für echte Synchronisierung bräuchte
+AES-GCM prüft zusätzlich die Echtheit: Wäre am Gist manipuliert worden oder ist
+die Passphrase falsch, schlägt das Entschlüsseln fehl, statt Unsinn zu liefern.
 
-Ein Server, der schreiben kann. Drei realistische Wege:
+### Zweites Token für Gists erstellen
 
-1. **Privater GitHub-Gist als Speicher.** Die App schreibt die JSON-Datei über
-   die GitHub-API in einen privaten Gist und liest sie beim Start zurück. Kostet
-   nichts, du hast schon ein Konto, und es passt zu deinem Aufbau. Nachteil: Ein
-   Token mit Gist-Rechten müsste im Browser gespeichert werden. Wer dein Handy
-   entsperrt hat, käme an dieses Token — bei eng begrenzten Rechten ist der
-   Schaden klein, aber es ist ein Zugeständnis.
-2. **Supabase oder Firebase**, kostenlose Stufe. Richtige Datenbank, echte
-   Anmeldung, saubere Konfliktbehandlung. Dafür ein zweiter Dienst, der
-   eingerichtet und gepflegt werden will.
-3. **Datei in einem synchronisierten Ordner.** Am wenigsten Technik, aber
-   Browser dürfen nicht automatisch auf Dateisystemordner schreiben — bleibt
-   also halbmanuell.
+Das Token aus Abschnitt 2 reicht nicht — das darf nur Dateien ins Repository
+schreiben. Für Gists brauchst du ein **klassisches** Token, weil die
+feingranularen Tokens Gists nicht abdecken:
 
-Für einen Nutzer mit ein bis zwei Geräten ist Weg 1 der beste Kompromiss.
-Sag Bescheid, dann baue ich ihn ein — sauber gekapselt in `core/storage.js`,
-sodass die übrige App unverändert bleibt. Ohne Token läuft sie dann weiterhin
-rein lokal.
+1. github.com → **Settings** → **Developer settings**
+2. **Personal access tokens** → **Tokens (classic)** → **Generate new token (classic)**
+3. **Note**: zum Beispiel `trainingsplan-sync`
+4. **Expiration**: nach Wunsch, ein Jahr ist praktikabel
+5. Bei **Select scopes** nur **`gist`** ankreuzen. Sonst nichts.
+6. **Generate token** → sofort kopieren, es wird nur einmal angezeigt.
+
+Mehr als `gist` darf das Token nicht dürfen. Selbst im schlimmsten Fall käme
+jemand damit nur an deine Gists, nicht an deine Repositories.
+
+### Einrichten
+
+1. In der App: **Mehr** → Abschnitt *Geräteabgleich*
+2. Passphrase wählen und wiederholen, mindestens acht Zeichen
+3. Token einfügen, Gist-ID leer lassen
+4. **Abgleich einrichten** — die App legt den Gist an und zeigt dir die **Gist-ID**
+
+**Notiere dir die Gist-ID.** Du brauchst sie auf jedem weiteren Gerät.
+
+### Zweites Gerät
+
+App öffnen → **Mehr** → Abgleich einrichten → **dieselbe Passphrase**, dasselbe
+Token, und diesmal die **Gist-ID eintragen**. Dann *Jetzt herunterladen*.
+
+### Im Alltag
+
+Nach jedem App-Start einmal die Passphrase eingeben, dann wird der aktuelle
+Stand automatisch geholt, sofern *Automatisch beim Start* angeschaltet ist.
+Nach dem Training auf *Jetzt hochladen*.
+
+Es gewinnt immer der neuere Zeitstempel. Ist der Stand in der Wolke neuer als
+dein letzter Abgleich, warnt die App, statt still zu überschreiben. Das genügt,
+weil du ohnehin nur auf einem Gerät gleichzeitig trainierst — trainiere zu Ende,
+lade hoch, wechsle dann das Gerät.
+
+### Was du wissen musst
+
+- **Die Passphrase kann niemand zurücksetzen**, auch ich nicht. Sie wird
+  nirgends gespeichert. Ist sie weg, ist der Stand im Gist unlesbar. Die Daten
+  auf dem Gerät selbst bleiben davon unberührt und lassen sich weiterhin als
+  JSON-Datei sichern.
+- **Ohne Abgleich läuft alles wie bisher.** Die Synchronisierung ist ein
+  Zusatz, kein Zwang. Wer sie nicht einrichtet, merkt nichts davon.
+- **Der Export als JSON-Datei bleibt bestehen** und ist die einfachere
+  Sicherung, wenn du gar nichts mit Tokens zu tun haben willst.
+
+## 6. Tests
+
+```bash
+npm test
+```
+
+Führt beide Testreihen aus: die Trainingslogik (1582 Prüfungen) und die
+Verschlüsselung (15 Prüfungen, inklusive falscher Passphrase und erkannter
+Manipulation).
+
+```bash
+npm run build     # erzeugt die Einzeldatei in dist/
+npm run serve     # lokaler Server auf Port 8000
+```
